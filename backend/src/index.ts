@@ -2,9 +2,13 @@
  * Express server entry point with security middleware, API routes, and error handling.
  * Configures CORS, rate limiting, request logging, and mounts auth/shader route handlers.
  */
+import dotenv from 'dotenv';
+
+// Load environment variables FIRST before any other imports
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
@@ -14,8 +18,6 @@ import shaderRoutes from './routes/shaders';
 import { errorMiddleware, notFoundHandler, asyncHandler } from './middleware/errorHandler';
 import { config } from './config/env';
 import { logger } from './utils/logger';
-
-dotenv.config();
 
 const app = express();
 const PORT = config.port;
