@@ -266,14 +266,17 @@ function EditorPage() {
       {/* Conditional Layout Rendering */}
       {isMobile ? (
         /* Mobile Layout - Vertical Stack */
-        <div className="flex flex-col flex-1 overflow-hidden">
+        <div className="flex flex-col flex-1 overflow-auto">
           {/* Shader Player - Fixed aspect ratio */}
           <div className="w-full p-2 flex-shrink-0">
             {shaderPlayerComponent}
           </div>
 
-          {/* Shader Editor - Fills remaining space */}
-          <div className="flex-1 flex flex-col bg-background min-h-0 overflow-auto">
+          {/* AI Panel - Expands/collapses vertically */}
+          <AIPanel isOpen={isAIPanelOpen} isMobile={true} />
+
+          {/* Shader Editor - Fixed height when AI panel is open */}
+          <div className="flex flex-col bg-background min-h-[50vh] overflow-auto">
             {shaderEditorComponent}
           </div>
         </div>
