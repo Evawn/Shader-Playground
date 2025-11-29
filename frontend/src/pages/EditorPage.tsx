@@ -19,7 +19,7 @@ import { calculatePanelMinSize } from '../utils/editorPageHelpers';
 import { PageHeader } from '../components/editor/PageHeader';
 import { TitleDropdown } from '../components/editor/TitleDropdown';
 import { LoadingScreen } from '../components/LoadingScreen';
-import { AIPanel } from '../components/editor/AIPanel';
+import { AIPanel } from '../components/AI/AIPanel';
 
 function EditorPage() {
   const navigate = useNavigate();
