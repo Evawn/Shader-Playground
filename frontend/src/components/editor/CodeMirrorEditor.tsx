@@ -173,7 +173,7 @@ const CodeMirrorEditorComponent: React.FC<CodeMirrorEditorProps> = ({
       }),
       EditorView.theme({
         '&': {
-          fontSize: '14px',
+          fontSize: '12px',
           fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
           height: '100%',
           maxHeight: '100%',

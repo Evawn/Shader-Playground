@@ -19,6 +19,7 @@ import { calculatePanelMinSize } from '../utils/editorPageHelpers';
 import { PageHeader } from '../components/editor/PageHeader';
 import { TitleDropdown } from '../components/editor/TitleDropdown';
 import { LoadingScreen } from '../components/LoadingScreen';
+import { AIPanel } from '../components/editor/AIPanel';
 
 function EditorPage() {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ function EditorPage() {
   // UI state (not editor state)
   const [isPlaying, setIsPlaying] = useState(true);
   const [leftPanelMinSize, setLeftPanelMinSize] = useState(30);
+  const [isAIPanelOpen, setIsAIPanelOpen] = useState(false);
 
   // Responsive state - track mobile breakpoint
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -210,6 +212,10 @@ function EditorPage() {
       // Shader operation callbacks
       onCompile={editorState.onCompile}
       onSave={editorState.onSave}
+
+      // AI Panel
+      isAIPanelOpen={isAIPanelOpen}
+      onToggleAIPanel={() => setIsAIPanelOpen(!isAIPanelOpen)}
     />
   );
 
@@ -272,25 +278,30 @@ function EditorPage() {
           </div>
         </div>
       ) : (
-        /* Desktop Layout - Horizontal Resizable Panels */
-        <ResizablePanelGroup direction="horizontal" className="flex-1" onLayout={handlePanelResize}>
-          {/* Shader Viewer - Left Panel */}
-          <ResizablePanel defaultSize={40} minSize={leftPanelMinSize}>
-            <div className="h-full w-full p-2">
-              {shaderPlayerComponent}
-            </div>
-          </ResizablePanel>
+        /* Desktop Layout - Horizontal Resizable Panels + AI Panel */
+        <div className="flex-1 flex overflow-hidden">
+          <ResizablePanelGroup direction="horizontal" className="flex-1" onLayout={handlePanelResize}>
+            {/* Shader Viewer - Left Panel */}
+            <ResizablePanel defaultSize={40} minSize={leftPanelMinSize}>
+              <div className="h-full w-full p-2">
+                {shaderPlayerComponent}
+              </div>
+            </ResizablePanel>
 
-          {/* Resize Handle */}
-          <ResizableHandle className="w-0.5 bg-lines" />
+            {/* Resize Handle */}
+            <ResizableHandle className="w-0.5 bg-lines" />
 
-          {/* Shader Editor - Right Panel */}
-          <ResizablePanel defaultSize={60} minSize={30}>
-            <div className="h-full flex flex-col bg-background">
-              {shaderEditorComponent}
-            </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+            {/* Shader Editor - Right Panel */}
+            <ResizablePanel defaultSize={60} minSize={30}>
+              <div className="h-full flex flex-col bg-background">
+                {shaderEditorComponent}
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+
+          {/* AI Panel - Outside resizable group */}
+          <AIPanel isOpen={isAIPanelOpen} />
+        </div>
       )}
 
       {/* Dialogs (moved from ShaderEditor) */}

@@ -9,7 +9,7 @@ import type { DropdownOption } from '../ui/Dropdown';
 import { DeleteTabDialog } from './DeleteTabDialog';
 import type { Tab } from '../../types';
 import { BACKGROUND_EDITOR } from '@/styles/editor_theme';
-import { Monitor, Layers, FileText } from 'lucide-react';
+import { Monitor, Layers, FileText, Sparkles } from 'lucide-react';
 
 interface TabBarProps {
   tabs: Tab[];
@@ -17,6 +17,8 @@ interface TabBarProps {
   onTabChange: (tabId: string) => void;
   onAddTab: (tabName: string) => void;
   onDeleteTab: (tabId: string) => void;
+  isPanelOpen: boolean;
+  onTogglePanel: () => void;
 }
 
 export function TabBar({
@@ -25,6 +27,8 @@ export function TabBar({
   onTabChange,
   onAddTab,
   onDeleteTab,
+  isPanelOpen,
+  onTogglePanel,
 }: TabBarProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [tabToDelete, setTabToDelete] = useState<Tab | null>(null);
@@ -196,6 +200,19 @@ export function TabBar({
             </Dropdown>
           </div>
         </div>
+
+        {/* AI Panel Toggle Button */}
+        <Button
+          size="sm"
+          className={`h-auto bg-transparent hover:bg-background-highlighted focus:outline-none shadow-none rounded-md ml-auto ${
+            isPanelOpen ? 'text-accent-highlighted' : 'text-accent'
+          }`}
+          style={{ width: '28px', height: '28px', padding: '4px' }}
+          onClick={onTogglePanel}
+          title="Toggle AI Panel"
+        >
+          <Sparkles className="w-full h-full" />
+        </Button>
 
 
       </div>

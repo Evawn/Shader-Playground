@@ -31,6 +31,10 @@ interface ShaderEditorProps {
   // Shader operation callbacks
   onCompile: () => void;
   onSave: (titleOverride?: string) => void;
+
+  // AI Panel
+  isAIPanelOpen: boolean;
+  onToggleAIPanel: () => void;
 }
 
 function ShaderEditor({
@@ -48,6 +52,8 @@ function ShaderEditor({
   onCodeChange,
   onCompile,
   onSave,
+  isAIPanelOpen,
+  onToggleAIPanel,
 }: ShaderEditorProps) {
   const [showErrorDecorations, setShowErrorDecorations] = useState(true);
   const isSwitchingTabsRef = useRef(false);
@@ -109,6 +115,8 @@ function ShaderEditor({
         onTabChange={onTabChange}
         onAddTab={onAddTab}
         onDeleteTab={onDeleteTab}
+        isPanelOpen={isAIPanelOpen}
+        onTogglePanel={onToggleAIPanel}
       />
 
       {/* Shader Uniforms Dropdown */}
