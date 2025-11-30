@@ -1,0 +1,73 @@
+/**
+ * AI Service
+ * Main orchestrator for the AI prompt processing pipeline
+ * Coordinates sanitization, prompt engineering, LLM calls, and response parsing
+ */
+
+import type { AIPromptResponse } from '@fragcoder/shared';
+import { ValidationError } from '../utils/errors';
+import { sanitizePrompt } from './ai/sanitizer';
+import { engineerPrompt } from './ai/promptEngineer';
+import { callLLM } from './ai/llmClient';
+import { parseResponse } from './ai/responseParser';
+import { logAIRequest } from './ai/metricsLogger';
+
+/**
+ * Process a user prompt through the AI pipeline
+ * Pipeline: sanitize → engineer → call LLM → parse → log
+ *
+ * @param prompt - Raw user prompt
+ * @param userId - Authenticated user's ID
+ * @returns AI response with message and optional usage metrics
+ */
+export async function processPrompt(
+  prompt: string,
+  userId: string
+): Promise<AIPromptResponse> {
+  const startTime = Date.now();
+
+  // Validate input
+  if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+    throw new ValidationError('Prompt is required and must be a non-empty string');
+  }
+
+  try {
+    // Pipeline execution
+    const sanitized = sanitizePrompt(prompt);
+    const engineered = engineerPrompt(sanitized);
+    const llmResult = await callLLM(engineered);
+    const parsed = parseResponse(llmResult.content);
+
+    const latencyMs = Date.now() - startTime;
+
+    // Log successful request
+    logAIRequest({
+      userId,
+      promptTokens: llmResult.usage.promptTokens,
+      completionTokens: llmResult.usage.completionTokens,
+      totalTokens: llmResult.usage.totalTokens,
+      latencyMs,
+      success: true,
+    });
+
+    return {
+      message: parsed,
+      usage: llmResult.usage,
+    };
+  } catch (error) {
+    const latencyMs = Date.now() - startTime;
+
+    // Log failed request
+    logAIRequest({
+      userId,
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      latencyMs,
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+
+    throw error;
+  }
+}

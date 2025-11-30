@@ -166,3 +166,31 @@ export interface ApiError {
   statusCode: number;
   details?: any;
 }
+
+// ============================================================================
+// AI Types
+// ============================================================================
+
+/**
+ * Request body for POST /api/ai/prompt
+ */
+export interface AIPromptRequest {
+  prompt: string;
+}
+
+/**
+ * Response for POST /api/ai/prompt
+ */
+export interface AIPromptResponse {
+  message: string;
+  usage?: AIUsageMetrics;
+}
+
+/**
+ * Token usage metrics from LLM API calls
+ */
+export interface AIUsageMetrics {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}

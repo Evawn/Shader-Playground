@@ -15,6 +15,7 @@ import morgan from 'morgan';
 import { prisma } from './db';
 import authRoutes from './routes/auth';
 import shaderRoutes from './routes/shaders';
+import aiRoutes from './routes/ai';
 import { errorMiddleware, notFoundHandler, asyncHandler } from './middleware/errorHandler';
 import { config } from './config/env';
 import { logger } from './utils/logger';
@@ -69,6 +70,9 @@ app.use('/api/auth', authRoutes);
 
 // Mount shader routes
 app.use('/api/shaders', shaderRoutes);
+
+// Mount AI routes
+app.use('/api/ai', aiRoutes);
 
 // Health check endpoint
 app.get('/health', (_req, res) => {

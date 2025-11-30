@@ -16,6 +16,8 @@ import {
   PromptInputSubmit,
 } from '../ui/shadcn-io/ai/prompt-input';
 import { Response } from '../ui/shadcn-io/ai/response';
+import { sendPrompt } from '../../api/ai';
+import { getErrorMessage } from '../../api/client';
 
 /**
  * Collapsible AI panel component for the shader editor.
@@ -27,6 +29,7 @@ interface ChatMessage {
   id: string;
   from: 'user' | 'assistant';
   content: string;
+  isError?: boolean;
 }
 
 interface AIPanelProps {
@@ -37,27 +40,47 @@ interface AIPanelProps {
 export function AIPanel({ isOpen, isMobile = false }: AIPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || isLoading) return;
+
+    const promptText = inputValue;
 
     // Add user message
     const userMsg: ChatMessage = {
       id: crypto.randomUUID(),
       from: 'user',
-      content: inputValue,
+      content: promptText,
     };
 
-    // Add placeholder assistant response
-    const assistantMsg: ChatMessage = {
-      id: crypto.randomUUID(),
-      from: 'assistant',
-      content: 'This is a placeholder response. Backend integration coming soon.',
-    };
-
-    setMessages((prev) => [...prev, userMsg, assistantMsg]);
+    setMessages((prev) => [...prev, userMsg]);
     setInputValue('');
+    setIsLoading(true);
+
+    try {
+      const response = await sendPrompt(promptText);
+
+      const assistantMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        from: 'assistant',
+        content: response.message,
+      };
+
+      setMessages((prev) => [...prev, assistantMsg]);
+    } catch (error) {
+      const errorMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        from: 'assistant',
+        content: getErrorMessage(error),
+        isError: true,
+      };
+
+      setMessages((prev) => [...prev, errorMsg]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const panelContent = (
@@ -67,15 +90,28 @@ export function AIPanel({ isOpen, isMobile = false }: AIPanelProps) {
         <ConversationContent className="space-y-2">
           {messages.map((msg) => (
             <Message key={msg.id} from={msg.from}>
-              <MessageContent>
+              <MessageContent
+                className={msg.isError ? 'bg-red-500/20 border-red-500/50' : ''}
+              >
                 {msg.from === 'assistant' ? (
-                  <Response>{msg.content}</Response>
+                  <Response className={msg.isError ? 'text-red-400' : ''}>
+                    {msg.isError ? `Error: ${msg.content}` : msg.content}
+                  </Response>
                 ) : (
                   msg.content
                 )}
               </MessageContent>
             </Message>
           ))}
+          {isLoading && (
+            <Message from="assistant">
+              <MessageContent>
+                <div className="animate-pulse text-foreground-muted">
+                  Thinking...
+                </div>
+              </MessageContent>
+            </Message>
+          )}
         </ConversationContent>
       </Conversation>
 
@@ -87,9 +123,10 @@ export function AIPanel({ isOpen, isMobile = false }: AIPanelProps) {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             className="bg-background text-foreground placeholder:text-foreground-muted"
+            disabled={isLoading}
           />
           <PromptInputToolbar className="justify-end">
-            <PromptInputSubmit disabled={!inputValue.trim()} />
+            <PromptInputSubmit disabled={!inputValue.trim() || isLoading} />
           </PromptInputToolbar>
         </PromptInput>
       </div>
