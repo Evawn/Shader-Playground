@@ -273,7 +273,11 @@ function EditorPage() {
           </div>
 
           {/* AI Panel - Expands/collapses vertically */}
-          <AIPanel isOpen={isAIPanelOpen} isMobile={true} />
+          <AIPanel
+            isOpen={isAIPanelOpen}
+            isMobile={true}
+            setCodeAndCompile={editorState.setCodeAndCompile}
+          />
 
           {/* Shader Editor - Fixed height when AI panel is open */}
           <div className="flex flex-col bg-background min-h-[50vh] overflow-auto">
@@ -303,7 +307,10 @@ function EditorPage() {
           </ResizablePanelGroup>
 
           {/* AI Panel - Outside resizable group */}
-          <AIPanel isOpen={isAIPanelOpen} />
+          <AIPanel
+            isOpen={isAIPanelOpen}
+            setCodeAndCompile={editorState.setCodeAndCompile}
+          />
         </div>
       )}
 

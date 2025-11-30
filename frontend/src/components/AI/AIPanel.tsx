@@ -35,9 +35,10 @@ interface ChatMessage {
 interface AIPanelProps {
   isOpen: boolean;
   isMobile?: boolean;
+  setCodeAndCompile: (newCode: string, tabId: string) => void;
 }
 
-export function AIPanel({ isOpen, isMobile = false }: AIPanelProps) {
+export function AIPanel({ isOpen, isMobile = false, setCodeAndCompile }: AIPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -62,10 +63,14 @@ export function AIPanel({ isOpen, isMobile = false }: AIPanelProps) {
     try {
       const response = await sendPrompt(promptText);
 
+      // Update the main Image tab (id: '1') with the generated shader code and compile
+      setCodeAndCompile(response.message, '1');
+
+      // Show simple confirmation message in chat
       const assistantMsg: ChatMessage = {
         id: crypto.randomUUID(),
         from: 'assistant',
-        content: response.message,
+        content: 'Generated shader',
       };
 
       setMessages((prev) => [...prev, assistantMsg]);

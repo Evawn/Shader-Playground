@@ -2,21 +2,32 @@
  * AI Response Parser
  * Parses and transforms LLM responses for the client
  *
- * Current: Skeleton implementation (pass-through)
- * Future: Extract code blocks, parse structured responses, format for UI
+ * Extracts GLSL code from markdown code blocks in LLM responses
  */
 
 /**
  * Parse LLM response into client-ready format
+ * Extracts code from markdown code blocks (```glsl, ```hlsl, or generic ```)
  * @param llmResponse - Raw response content from LLM
- * @returns Parsed response string
+ * @returns Extracted code or original response if no code block found
  */
 export function parseResponse(llmResponse: string): string {
-  // Skeleton: return input unchanged
-  // TODO: Implement response parsing
-  // - Extract GLSL code blocks
-  // - Parse structured JSON responses
-  // - Validate generated code syntax
-  // - Format for UI display
+  // Try to match code blocks with language specifier (glsl, hlsl, c, etc.)
+  const langCodeBlockRegex = /```(?:glsl|hlsl|c|cpp)?\s*\n([\s\S]*?)```/i;
+  const langMatch = llmResponse.match(langCodeBlockRegex);
+
+  if (langMatch && langMatch[1]) {
+    return langMatch[1].trim();
+  }
+
+  // Try to match any generic code block
+  const genericCodeBlockRegex = /```\s*\n?([\s\S]*?)```/;
+  const genericMatch = llmResponse.match(genericCodeBlockRegex);
+
+  if (genericMatch && genericMatch[1]) {
+    return genericMatch[1].trim();
+  }
+
+  // No code block found - return original response
   return llmResponse;
 }

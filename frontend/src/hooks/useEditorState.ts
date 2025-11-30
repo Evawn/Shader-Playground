@@ -55,6 +55,7 @@ interface UseEditorStateReturn {
   onAddTab: (name: string) => void;
   onDeleteTab: (tabId: string) => void;
   onCodeChange: (newCode: string, tabId: string) => void;
+  setCodeAndCompile: (newCode: string, tabId: string) => void;
 
   // Shader operations
   onCompile: () => void;
@@ -219,6 +220,25 @@ export function useEditorState({
       tab.id === tabId ? { ...tab, code: newCode } : tab
     ));
   }, []);
+
+  // Set code and compile in one operation (avoids stale closure issue)
+  const setCodeAndCompile = useCallback((newCode: string, tabId: string) => {
+    // Update tabs state
+    setTabs(prevTabs => prevTabs.map(tab =>
+      tab.id === tabId ? { ...tab, code: newCode } : tab
+    ));
+
+    // Set compiling state
+    setIsCompiling(true);
+    setLastCompilationTime(Date.now());
+
+    // Build tabs data with the new code directly (not from stale state)
+    const updatedTabs = tabs.map(tab =>
+      tab.id === tabId ? { ...tab, code: newCode } : tab
+    );
+    const tabsData = tabsToTabData(updatedTabs);
+    rendererCompile(tabsData);
+  }, [tabs, rendererCompile]);
 
   const handleCompile = useCallback(() => {
     // Set compiling state and update timestamp
@@ -422,6 +442,7 @@ export function useEditorState({
     onAddTab: handleAddTab,
     onDeleteTab: handleDeleteTab,
     onCodeChange: handleCodeChange,
+    setCodeAndCompile,
 
     // Shader operations
     onCompile: handleCompile,
