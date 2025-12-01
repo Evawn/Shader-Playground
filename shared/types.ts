@@ -176,13 +176,15 @@ export interface ApiError {
  */
 export interface AIPromptRequest {
   prompt: string;
+  model?: string;
 }
 
 /**
  * Response for POST /api/ai/prompt
  */
 export interface AIPromptResponse {
-  message: string;
+  code: string;
+  explanation: string;
   usage?: AIUsageMetrics;
 }
 

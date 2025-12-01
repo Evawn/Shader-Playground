@@ -3,6 +3,11 @@
  * Handles communication with OpenRouter API
  */
 
+const ALLOWED_MODELS = [
+  'google/gemini-2.0-flash-001',
+  'anthropic/claude-sonnet-4-5',
+];
+
 interface OpenRouterResponse {
   choices: { message: { content: string } }[];
   usage?: {
@@ -27,11 +32,17 @@ export interface LLMResponse {
 /**
  * Call the LLM API with an engineered prompt
  * @param prompt - Engineered prompt ready for LLM
+ * @param requestedModel - Optional model ID to use
  * @returns LLM response with content and usage metrics
  */
-export async function callLLM(prompt: string): Promise<LLMResponse> {
+export async function callLLM(prompt: string, requestedModel?: string): Promise<LLMResponse> {
   const apiKey = process.env.OPENROUTER_API_KEY;
-  const model = process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-001';
+  const defaultModel = process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-001';
+
+  // Validate and select model - use requested if allowed, otherwise fall back to default
+  const model = requestedModel && ALLOWED_MODELS.includes(requestedModel)
+    ? requestedModel
+    : defaultModel;
 
   if (!apiKey) {
     throw new Error('OPENROUTER_API_KEY environment variable is not set');

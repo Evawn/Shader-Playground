@@ -284,6 +284,7 @@ function EditorPage() {
           <AIPanel
             isOpen={isAIPanelOpen}
             isMobile={true}
+            onClose={() => setIsAIPanelOpen(false)}
             setCodeAndCompile={editorState.setCodeAndCompile}
           />
 
@@ -317,6 +318,7 @@ function EditorPage() {
           {/* AI Panel - Outside resizable group */}
           <AIPanel
             isOpen={isAIPanelOpen}
+            onClose={() => setIsAIPanelOpen(false)}
             setCodeAndCompile={editorState.setCodeAndCompile}
           />
         </div>

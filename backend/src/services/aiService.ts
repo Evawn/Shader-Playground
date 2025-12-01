@@ -18,11 +18,13 @@ import { logAIRequest } from './ai/metricsLogger';
  *
  * @param prompt - Raw user prompt
  * @param userId - Authenticated user's ID
+ * @param model - Optional model ID to use
  * @returns AI response with message and optional usage metrics
  */
 export async function processPrompt(
   prompt: string,
-  userId: string
+  userId: string,
+  model?: string
 ): Promise<AIPromptResponse> {
   const startTime = Date.now();
 
@@ -35,7 +37,7 @@ export async function processPrompt(
     // Pipeline execution
     const sanitized = sanitizePrompt(prompt);
     const engineered = engineerPrompt(sanitized);
-    const llmResult = await callLLM(engineered);
+    const llmResult = await callLLM(engineered, model);
     const parsed = parseResponse(llmResult.content);
 
     const latencyMs = Date.now() - startTime;
@@ -51,7 +53,8 @@ export async function processPrompt(
     });
 
     return {
-      message: parsed,
+      code: parsed.code,
+      explanation: parsed.explanation,
       usage: llmResult.usage,
     };
   } catch (error) {

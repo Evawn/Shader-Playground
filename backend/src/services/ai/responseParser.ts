@@ -2,32 +2,68 @@
  * AI Response Parser
  * Parses and transforms LLM responses for the client
  *
- * Extracts GLSL code from markdown code blocks in LLM responses
+ * Parses JSON responses containing code and explanation fields
  */
+
+export interface ParsedAIResponse {
+  code: string;
+  explanation: string;
+}
 
 /**
- * Parse LLM response into client-ready format
- * Extracts code from markdown code blocks (```glsl, ```hlsl, or generic ```)
- * @param llmResponse - Raw response content from LLM
- * @returns Extracted code or original response if no code block found
+ * Parse LLM response into structured format with code and explanation
+ * @param llmResponse - Raw response content from LLM (expected to be JSON)
+ * @returns Parsed response with code and explanation fields
+ * @throws Error if response is not valid JSON or missing required fields
  */
-export function parseResponse(llmResponse: string): string {
-  // Try to match code blocks with language specifier (glsl, hlsl, c, etc.)
-  const langCodeBlockRegex = /```(?:glsl|hlsl|c|cpp)?\s*\n([\s\S]*?)```/i;
-  const langMatch = llmResponse.match(langCodeBlockRegex);
+export function parseResponse(llmResponse: string): ParsedAIResponse {
+  let parsed: unknown;
 
-  if (langMatch && langMatch[1]) {
-    return langMatch[1].trim();
+  // First try direct JSON parse
+  try {
+    parsed = JSON.parse(llmResponse);
+  } catch {
+    // Try to extract JSON from markdown code block
+    const jsonBlockRegex = /```(?:json)?\s*\n?([\s\S]*?)```/i;
+    const match = llmResponse.match(jsonBlockRegex);
+
+    if (match && match[1]) {
+      try {
+        parsed = JSON.parse(match[1].trim());
+      } catch {
+        throw new Error(
+          'Failed to parse AI response as JSON. Please try again.'
+        );
+      }
+    } else {
+      throw new Error(
+        'Failed to parse AI response as JSON. Please try again.'
+      );
+    }
   }
 
-  // Try to match any generic code block
-  const genericCodeBlockRegex = /```\s*\n?([\s\S]*?)```/;
-  const genericMatch = llmResponse.match(genericCodeBlockRegex);
-
-  if (genericMatch && genericMatch[1]) {
-    return genericMatch[1].trim();
+  // Validate required fields
+  if (
+    typeof parsed !== 'object' ||
+    parsed === null ||
+    !('code' in parsed) ||
+    !('explanation' in parsed)
+  ) {
+    throw new Error(
+      'AI response missing required fields (code, explanation). Please try again.'
+    );
   }
 
-  // No code block found - return original response
-  return llmResponse;
+  const response = parsed as { code: unknown; explanation: unknown };
+
+  if (typeof response.code !== 'string' || typeof response.explanation !== 'string') {
+    throw new Error(
+      'AI response fields must be strings. Please try again.'
+    );
+  }
+
+  return {
+    code: response.code,
+    explanation: response.explanation,
+  };
 }

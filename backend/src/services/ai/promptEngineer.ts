@@ -18,12 +18,10 @@ export function engineerPrompt(userPrompt: string): string {
   // - Include GLSL language specifications
   // - Add examples of good shader code
   // - Include current shader context if available
-  const header = "Create the code for a fragment shader that creates the following visual: '";
-  const footer = `'
+  const prompt = `Create a fragment shader that creates the following visual: "${userPrompt}"
 
 Here are the provided uniforms and the main function header as the shader entrypoint:
 
-\`\`\`
 uniform vec3 iResolution;          // viewport resolution (in pixels)
 uniform float iTime;               // shader playback time (in seconds)
 uniform float iTimeDelta;          // render time (in seconds)
@@ -37,11 +35,15 @@ uniform sampler2D BufferC;         // Buffer C texture
 uniform sampler2D BufferD;         // Buffer D texture
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-    vec2 uv = fragCoord / iResolution.xy;
-    fragColor = vec4(uv, 0.5 + 0.5*sin(3.0 * iTime), 1.0);
+    // Your code here
 }
-\`\`\`
 
-Do not include the uniform definitions in your response. Do not include any comments in your code.`;
-  return header + userPrompt + footer;
+Do not include the uniform definitions in your response. Do not include any comments in your code.
+
+Respond with ONLY a valid JSON object in this exact format (no markdown, no code blocks, just raw JSON):
+{
+  "code": "void mainImage(out vec4 fragColor, in vec2 fragCoord) { ... your complete function code ... }",
+  "explanation": "Brief 1-2 sentence explanation of what the shader does and how it works"
+}`;
+  return prompt;
 }
