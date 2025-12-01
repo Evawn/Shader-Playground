@@ -10,12 +10,10 @@ export function BrowseButton({ onClick }: BrowseButtonProps) {
     <Button
       variant="ghost"
       size="sm"
-      className="h-auto px-2 py-1 gap-0 text-large font-light text-foreground bg-transparent hover:text-accent hover:bg-transparent focus:outline-none"
-      style={{ outline: 'none', border: 'none' }}
+      className="h-7 px-2 py-1 text-sm font-light text-foreground bg-transparent hover:text-foreground-highlighted hover:bg-background-highlighted focus:outline-none rounded-md"
       onClick={onClick}
     >
-      <span className="text-large">Browse</span>
-      {/* <LayoutGrid className="!w-5 !h-5 ml-1 stroke-[1.5]" /> */}
+      Browse
     </Button>
   );
 }

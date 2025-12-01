@@ -1,7 +1,7 @@
 // Custom hook to manage all editor state and business logic for the shader editor
 // Encapsulates tab management, shader operations, compilation state, and dialog interactions
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { CompilationError, Tab, ShaderData } from '../types';
 import type { TabShaderData } from '../utils/GLSLCompiler';
@@ -46,6 +46,7 @@ interface UseEditorStateReturn {
   isOwner: boolean;
   isCompiling: boolean;
   lastCompilationTime: number;
+  hasUnsavedChanges: boolean;
 
   // Dialog management
   dialogManager: ReturnType<typeof useDialogManager>;
@@ -91,6 +92,12 @@ export function useEditorState({
   const [loading, setLoading] = useState(false);
   const [isCompiling, setIsCompiling] = useState(false);
   const [lastCompilationTime, setLastCompilationTime] = useState<number>(0);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Ref to store the "saved" snapshot of tabs for comparison
+  const savedTabsSnapshotRef = useRef<string | null>(null);
+  // Debounce timer for unsaved changes check
+  const unsavedCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Tab management state
   const [tabs, setTabs] = useState<Tab[]>([
@@ -108,6 +115,42 @@ export function useEditorState({
   const isOwner = useMemo(() => {
     return !!(user && shader && user.id === shader.userId);
   }, [user, shader]);
+
+  // Helper to create a snapshot string from tabs (for comparison)
+  const createTabsSnapshot = useCallback((tabsToSnapshot: Tab[]): string => {
+    return JSON.stringify(tabsToSnapshot.map(t => ({ name: t.name, code: t.code })));
+  }, []);
+
+  // Check for unsaved changes with debouncing
+  useEffect(() => {
+    // Clear any pending timer
+    if (unsavedCheckTimerRef.current) {
+      clearTimeout(unsavedCheckTimerRef.current);
+    }
+
+    // For new shaders (no shaderUrl), always show as unsaved
+    if (!shaderUrl) {
+      setHasUnsavedChanges(true);
+      return;
+    }
+
+    // For saved shaders, debounce the comparison
+    unsavedCheckTimerRef.current = setTimeout(() => {
+      if (savedTabsSnapshotRef.current === null) {
+        // No snapshot yet, consider as saved
+        setHasUnsavedChanges(false);
+      } else {
+        const currentSnapshot = createTabsSnapshot(tabs);
+        setHasUnsavedChanges(currentSnapshot !== savedTabsSnapshotRef.current);
+      }
+    }, 500);
+
+    return () => {
+      if (unsavedCheckTimerRef.current) {
+        clearTimeout(unsavedCheckTimerRef.current);
+      }
+    };
+  }, [tabs, shaderUrl, createTabsSnapshot]);
 
   // Handle compilation results - updates state and calls auto-play callback
   const handleCompilationResult = useCallback((success: boolean, errors: CompilationError[], compilationTime: number) => {
@@ -154,7 +197,11 @@ export function useEditorState({
 
       // Load tabs from shader data and sort them in canonical order
       const loadedTabs = apiTabsToLocalTabs(apiShader.tabs);
-      setTabs(sortTabsByCanonicalOrder(loadedTabs));
+      const sortedTabs = sortTabsByCanonicalOrder(loadedTabs);
+      setTabs(sortedTabs);
+
+      // Save snapshot of loaded tabs for unsaved changes tracking
+      savedTabsSnapshotRef.current = JSON.stringify(sortedTabs.map(t => ({ name: t.name, code: t.code })));
 
       // Trigger compilation after loading (using imperative method)
       const tabsData = tabsToTabData(loadedTabs);
@@ -292,6 +339,10 @@ export function useEditorState({
 
       // Save via API
       await updateShader(slug, updateData, token);
+
+      // Update saved snapshot after successful save
+      savedTabsSnapshotRef.current = JSON.stringify(tabs.map(t => ({ name: t.name, code: t.code })));
+      setHasUnsavedChanges(false);
 
     } catch (error) {
       logger.error('Failed to save shader', error);
@@ -433,6 +484,7 @@ export function useEditorState({
     isOwner,
     isCompiling,
     lastCompilationTime,
+    hasUnsavedChanges,
 
     // Dialog management
     dialogManager,

@@ -1,6 +1,5 @@
 // Button for creating a new shader
 import { Button } from '../ui/button';
-import { Plus } from 'lucide-react';
 
 interface NewShaderButtonProps {
   onClick: () => void;
@@ -11,12 +10,10 @@ export function NewShaderButton({ onClick }: NewShaderButtonProps) {
     <Button
       variant="ghost"
       size="sm"
-      className="h-auto px-2 py-1 gap-0 text-large font-light text-foreground bg-transparent hover:text-accent hover:bg-transparent focus:outline-none"
-      style={{ outline: 'none', border: 'none' }}
+      className="h-7 px-2 py-1 text-sm font-light text-foreground bg-transparent hover:text-foreground-highlighted hover:bg-background-highlighted focus:outline-none rounded-md"
       onClick={onClick}
     >
-      <span className="text-large hidden md:inline">New</span>
-      <Plus className="w-4 h-4 md:ml-1" />
+      New
     </Button>
   );
 }

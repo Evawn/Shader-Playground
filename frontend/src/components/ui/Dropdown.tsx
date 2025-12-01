@@ -75,9 +75,9 @@ export function Dropdown({ children, options, align = 'center', sideOffset = 8, 
               <button
                 key={index}
                 onClick={() => handleOptionClick(option.callback)}
-                className="min-w-[128px] rounded px-2 py-2 text-left text-sm text-foreground hover:text-foreground-highlighted hover:bg-background-highlighted transition-colors duration-150 flex items-center gap-2"
+                className="min-w-[128px] rounded px-2 py-2 text-left text-sm font-light text-foreground hover:text-foreground-highlighted hover:bg-background-highlighted transition-colors duration-150 flex items-center gap-2"
               >
-                {Icon && <Icon className="w-4 h-4 stroke-[2]" />}
+                {Icon && <Icon className="w-4 h-4 stroke-[1.5]" />}
                 {option.text}
               </button>
             );

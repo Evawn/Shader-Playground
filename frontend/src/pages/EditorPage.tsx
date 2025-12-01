@@ -212,10 +212,6 @@ function EditorPage() {
       // Shader operation callbacks
       onCompile={editorState.onCompile}
       onSave={editorState.onSave}
-
-      // AI Panel
-      isAIPanelOpen={isAIPanelOpen}
-      onToggleAIPanel={() => setIsAIPanelOpen(!isAIPanelOpen)}
     />
   );
 
@@ -234,11 +230,23 @@ function EditorPage() {
         creatorUsername={editorState.shader?.creatorUsername}
         isSavedShader={!!editorState.shaderUrl}
         isOwner={editorState.isOwner}
+        hasUnsavedChanges={editorState.hasUnsavedChanges}
         onSave={editorState.onSave}
         onSaveAs={editorState.onSaveAs}
-        onRename={editorState.dialogManager.openRename}
+        onRename={editorState.onRename}
         onClone={editorState.onClone}
         onDelete={editorState.onDelete}
+        isPlaying={isPlaying}
+        isCompiling={editorState.isCompiling}
+        compilationSuccess={editorState.compilationSuccess}
+        lastCompilationTime={editorState.lastCompilationTime}
+        onCompile={() => {
+          editorState.onCompile();
+          setIsPlaying(true);
+        }}
+        onPause={() => setIsPlaying(false)}
+        isAIPanelOpen={isAIPanelOpen}
+        onToggleAIPanel={() => setIsAIPanelOpen(!isAIPanelOpen)}
         isSignedIn={!!user}
         username={user?.username}
         userPicture={user?.picture || undefined}
@@ -254,9 +262,9 @@ function EditorPage() {
             creatorUsername={editorState.shader?.creatorUsername}
             isSavedShader={!!editorState.shaderUrl}
             isOwner={editorState.isOwner}
-            onSave={editorState.onSave}
+            hasUnsavedChanges={editorState.hasUnsavedChanges}
             onSaveAs={editorState.onSaveAs}
-            onRename={editorState.dialogManager.openRename}
+            onRename={editorState.onRename}
             onClone={editorState.onClone}
             onDelete={editorState.onDelete}
           />

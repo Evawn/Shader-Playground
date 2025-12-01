@@ -10,9 +10,9 @@ interface EditorHeaderProps {
   creatorUsername?: string;
   isSavedShader: boolean;
   isOwner: boolean;
-  onSave: () => void;
+  hasUnsavedChanges?: boolean;
   onSaveAs: () => void;
-  onRename: () => void;
+  onRename: (newName: string) => void;
   onClone: () => void;
   onDelete: () => void;
 
@@ -29,7 +29,7 @@ export function EditorHeader({
   creatorUsername,
   isSavedShader,
   isOwner,
-  onSave,
+  hasUnsavedChanges,
   onSaveAs,
   onRename,
   onClone,
@@ -48,7 +48,7 @@ export function EditorHeader({
         creatorUsername={creatorUsername}
         isSavedShader={isSavedShader}
         isOwner={isOwner}
-        onSave={onSave}
+        hasUnsavedChanges={hasUnsavedChanges}
         onSaveAs={onSaveAs}
         onRename={onRename}
         onClone={onClone}

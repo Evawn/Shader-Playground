@@ -16,10 +16,15 @@ export const aiRateLimiter = rateLimit({
   message: { error: 'Too many AI requests. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
-  // Use IP + user ID as key when authenticated
+  // Use user ID as key when authenticated, otherwise fall back to default IP handling
   keyGenerator: (req) => {
     const userId = (req as any).user?.id;
-    const ip = req.ip || req.socket.remoteAddress || 'unknown';
-    return userId ? `ai:${userId}` : `ai:${ip}`;
+    if (userId) {
+      return `ai:${userId}`;
+    }
+    // Return undefined to let express-rate-limit use its default IP-based key generator
+    // which properly handles IPv6 addresses
+    return req.ip ?? 'unknown';
   },
+  validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false },
 });

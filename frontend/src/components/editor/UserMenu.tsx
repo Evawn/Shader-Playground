@@ -28,12 +28,11 @@ export function UserMenu({
       <Button
         variant="ghost"
         size="sm"
-        className="h-auto px-2 py-1 text-large font-light text-foreground bg-transparent hover:text-accent hover:bg-transparent focus:outline-none"
-        style={{ outline: 'none', border: 'none' }}
+        className="h-7 px-2 py-1 text-sm font-light text-foreground bg-transparent hover:text-foreground-highlighted hover:bg-background-highlighted focus:outline-none rounded-md flex items-center gap-1"
         onClick={onSignIn}
       >
-        <span className="text-large hidden md:inline">Sign In</span>
-        <UserCircle className="w-4 h-4 md:mr-1" />
+        <UserCircle className="w-4 h-4" />
+        <span className="hidden md:inline">Sign In</span>
       </Button>
     );
   }
@@ -61,22 +60,18 @@ export function UserMenu({
       <Button
         variant="ghost"
         size="sm"
-        className="h-auto  px-2 py-1 text-large font-light text-foreground bg-transparent hover:text-accent hover:bg-transparent focus:outline-none"
-        style={{ outline: 'none', border: 'none' }}
+        className="h-7 px-2 py-1 text-sm font-light text-foreground bg-transparent hover:text-foreground-highlighted hover:bg-background-highlighted focus:outline-none rounded-md flex items-center gap-1"
       >
-        <div className="flex items-center gap-2">
-          <span className="text-large hidden md:inline">{username}</span>
-          {userPicture ? (
-            <img
-              src={userPicture}
-              alt={username}
-              className="w-6 h-6 rounded-full"
-            />
-          ) : (
-            <UserCircle className="!w-4 !h-4" />
-          )}
-
-        </div>
+        {userPicture ? (
+          <img
+            src={userPicture}
+            alt={username}
+            className="w-5 h-5 rounded-full"
+          />
+        ) : (
+          <UserCircle className="w-4 h-4" />
+        )}
+        <span className="hidden md:inline">{username}</span>
       </Button>
     </Dropdown>
   );
