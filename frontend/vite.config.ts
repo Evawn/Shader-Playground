@@ -9,6 +9,7 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@fragcoder/shared': path.resolve(__dirname, '../shared/types.ts'),
+      '@repo/shadcn-ui': path.resolve(__dirname, './src'),
     },
   },
 })

@@ -19,12 +19,14 @@ import { logAIRequest } from './ai/metricsLogger';
  * @param prompt - Raw user prompt
  * @param userId - Authenticated user's ID
  * @param model - Optional model ID to use
+ * @param code - Optional current editor code for context
  * @returns AI response with message and optional usage metrics
  */
 export async function processPrompt(
   prompt: string,
   userId: string,
-  model?: string
+  model?: string,
+  code?: string
 ): Promise<AIPromptResponse> {
   const startTime = Date.now();
 
@@ -36,7 +38,7 @@ export async function processPrompt(
   try {
     // Pipeline execution
     const sanitized = sanitizePrompt(prompt);
-    const engineered = engineerPrompt(sanitized);
+    const engineered = engineerPrompt(sanitized, code);
     const llmResult = await callLLM(engineered, model);
     const parsed = parseResponse(llmResult.content);
 

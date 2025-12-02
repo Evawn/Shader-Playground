@@ -10,10 +10,15 @@ import type { AIPromptRequest, AIPromptResponse } from '@fragcoder/shared';
  * Send a prompt to the AI assistant
  * @param prompt - User's prompt text
  * @param model - Optional model ID to use
+ * @param code - Optional current editor code for context
  * @returns AI response with message and usage metrics
  */
-export async function sendPrompt(prompt: string, model?: string): Promise<AIPromptResponse> {
-  const request: AIPromptRequest = { prompt, model };
+export async function sendPrompt(
+  prompt: string,
+  model?: string,
+  code?: string
+): Promise<AIPromptResponse> {
+  const request: AIPromptRequest = { prompt, model, code };
   const response = await apiClient.post<AIPromptResponse>('/api/ai/prompt', request);
   return response.data;
 }

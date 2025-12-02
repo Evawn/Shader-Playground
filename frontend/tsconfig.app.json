@@ -28,7 +28,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@fragcoder/shared": ["../shared/types"]
+      "@fragcoder/shared": ["../shared/types"],
+      "@repo/shadcn-ui/*": ["./src/*"]
     }
   },
   "include": [

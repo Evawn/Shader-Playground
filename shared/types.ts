@@ -177,6 +177,7 @@ export interface ApiError {
 export interface AIPromptRequest {
   prompt: string;
   model?: string;
+  code?: string;  // Optional current editor code for context
 }
 
 /**
