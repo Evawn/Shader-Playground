@@ -76,28 +76,94 @@ function UserMessage({
   return (
     <Message from="user">
       <div className="flex flex-col gap-2">
-        <MessageContent>
-          {isEditing ? (
-            <div className="space-y-2">
-              <Textarea
-                value={editedContent}
-                onChange={(e) => setEditedContent(e.target.value)}
-                className="min-h-[60px] bg-background"
-                autoFocus
-              />
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleSubmitEdit} disabled={isLoading}>
-                  Submit
-                </Button>
-                <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
-                  Cancel
-                </Button>
+        {/* Message content with floating action bar */}
+        <div className="relative group/user-msg">
+          <div className="rounded-lg border border-none bg-background-editor p-3 text-foreground text-xs">
+            {isEditing ? (
+              <div className="space-y-2">
+                <Textarea
+                  value={editedContent}
+                  onChange={(e) => setEditedContent(e.target.value)}
+                  className="min-h-[60px] bg-background"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={handleSubmitEdit} disabled={isLoading}>
+                    Submit
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
+                    Cancel
+                  </Button>
+                </div>
               </div>
+            ) : (
+              <div className="whitespace-pre-wrap">{message.content}</div>
+            )}
+          </div>
+
+          {/* Floating action bar - appears on hover (but not while loading) */}
+          {!isEditing && (
+            <div className={cn(
+              "absolute right-4 -bottom-2 translate-y-1/2 z-10 opacity-0 transition-opacity",
+              !isLoading && "group-hover/user-msg:opacity-100"
+            )}>
+              <Actions className="bg-background-header rounded-md p-1">
+                <Action
+                  tooltip="Retry"
+                  tooltipSide="bottom"
+                  onClick={() => onReroll(message.id)}
+                  disabled={isLoading}
+                >
+                  <RefreshCw className="h-3 w-3" />
+                </Action>
+                <Action
+                  tooltip="Edit"
+                  tooltipSide="bottom"
+                  onClick={() => setIsEditing(true)}
+                  disabled={isLoading}
+                >
+                  <Pencil className="h-3 w-3" />
+                </Action>
+
+                {/* Branch navigation (only shown when branches > 1) */}
+                {branchInfo.count > 1 && (
+                  <>
+                    <div className="w-px h-3 bg-border mx-1" />
+                    <Action
+                      tooltip="Previous version"
+                      tooltipSide="bottom"
+                      onClick={() => {
+                        const newIndex = branchInfo.activeIndex > 0
+                          ? branchInfo.activeIndex - 1
+                          : branchInfo.count - 1;
+                        onBranchChange(parentKey, newIndex);
+                      }}
+                      disabled={isLoading}
+                    >
+                      <ChevronLeft className="h-3 w-3" />
+                    </Action>
+                    <span className="text-xs text-muted-foreground tabular-nums px-1">
+                      {branchInfo.activeIndex + 1}/{branchInfo.count}
+                    </span>
+                    <Action
+                      tooltip="Next version"
+                      tooltipSide="bottom"
+                      onClick={() => {
+                        const newIndex = branchInfo.activeIndex < branchInfo.count - 1
+                          ? branchInfo.activeIndex + 1
+                          : 0;
+                        onBranchChange(parentKey, newIndex);
+                      }}
+                      disabled={isLoading}
+                    >
+                      <ChevronRight className="h-3 w-3" />
+                    </Action>
+                  </>
+                )}
+              </Actions>
             </div>
-          ) : (
-            <div className="whitespace-pre-wrap">{message.content}</div>
           )}
-        </MessageContent>
+        </div>
 
         {/* Code artifact if present */}
         {message.codeArtifact && !isEditing && (
@@ -106,67 +172,6 @@ function UserMessage({
             onApply={onApplyCode}
             className="max-w-[80%] ml-auto"
           />
-        )}
-
-        {/* Actions and branch navigation */}
-        {!isEditing && (
-          <div className="flex items-center gap-1 justify-end">
-            {/* Branch navigation (only shown when branches > 1) */}
-            {branchInfo.count > 1 && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => {
-                    const newIndex = branchInfo.activeIndex > 0
-                      ? branchInfo.activeIndex - 1
-                      : branchInfo.count - 1;
-                    onBranchChange(parentKey, newIndex);
-                  }}
-                  disabled={isLoading}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-xs text-muted-foreground tabular-nums px-1">
-                  {branchInfo.activeIndex + 1} of {branchInfo.count}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => {
-                    const newIndex = branchInfo.activeIndex < branchInfo.count - 1
-                      ? branchInfo.activeIndex + 1
-                      : 0;
-                    onBranchChange(parentKey, newIndex);
-                  }}
-                  disabled={isLoading}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <div className="w-px h-4 bg-border mx-1" />
-              </>
-            )}
-
-            {/* Action buttons */}
-            <Actions>
-              <Action
-                tooltip="Regenerate"
-                onClick={() => onReroll(message.id)}
-                disabled={isLoading}
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Action>
-              <Action
-                tooltip="Edit"
-                onClick={() => setIsEditing(true)}
-                disabled={isLoading}
-              >
-                <Pencil className="h-4 w-4" />
-              </Action>
-            </Actions>
-          </div>
         )}
       </div>
     </Message>

@@ -126,12 +126,14 @@ export function useChatState() {
    * @param content - The message text
    * @param codeContext - Optional code that was sent with the message
    * @param parentId - Parent message ID (null for root, assistant ID for follow-up)
+   * @param thumbnail - Optional thumbnail data URL for the code
    * @returns The ID of the new message
    */
   const addUserMessage = useCallback((
     content: string,
     codeContext?: string,
-    parentId: string | null = null
+    parentId: string | null = null,
+    thumbnail?: string
   ): string => {
     const id = crypto.randomUUID();
 
@@ -140,6 +142,7 @@ export function useChatState() {
       type: 'user-context',
       code: codeContext,
       label: 'Code sent',
+      thumbnail,
     } : undefined;
 
     const newMessage: ChatMessageNode = {
@@ -161,13 +164,15 @@ export function useChatState() {
    * @param content - The explanation text
    * @param generatedCode - The generated shader code
    * @param isError - Whether this is an error response
+   * @param thumbnail - Optional thumbnail data URL for the generated code
    * @returns The ID of the new message
    */
   const addAssistantMessage = useCallback((
     parentUserMessageId: string,
     content: string,
     generatedCode?: string,
-    isError?: boolean
+    isError?: boolean,
+    thumbnail?: string
   ): string => {
     const id = crypto.randomUUID();
 
@@ -176,6 +181,7 @@ export function useChatState() {
       type: 'generated',
       code: generatedCode,
       label: 'Generated shader',
+      thumbnail,
     } : undefined;
 
     const newMessage: ChatMessageNode = {

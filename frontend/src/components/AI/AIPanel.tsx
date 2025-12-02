@@ -19,6 +19,7 @@ import { sendPrompt } from '../../api/ai';
 import { getErrorMessage } from '../../api/client';
 import { Chat } from './Chat';
 import { useChatState } from './hooks/useChatState';
+import { useThumbnailCapture } from './hooks/useThumbnailCapture';
 import type { TabData } from '@fragcoder/shared';
 
 const AVAILABLE_MODELS = [
@@ -47,6 +48,7 @@ export function AIPanel({
   const [includeCode, setIncludeCode] = useState(true);
 
   const chatState = useChatState();
+  const { captureThumbnail } = useThumbnailCapture();
 
   /**
    * Get the current code from the Image tab
@@ -83,11 +85,16 @@ export function AIPanel({
       // Update the editor with generated code
       setCodeAndCompile(response.code, '1');
 
-      // Add assistant response with code artifact
+      // Capture thumbnail of the generated shader
+      const thumbnail = await captureThumbnail(response.code);
+
+      // Add assistant response with code artifact and thumbnail
       chatState.addAssistantMessage(
         userMessageId,
         response.explanation,
-        response.code
+        response.code,
+        false,
+        thumbnail ?? undefined
       );
 
       // Complete the task
@@ -101,7 +108,7 @@ export function AIPanel({
         true
       );
     }
-  }, [selectedModel, setCodeAndCompile, chatState]);
+  }, [selectedModel, setCodeAndCompile, chatState, captureThumbnail]);
 
   /**
    * Handle new prompt submission
@@ -113,11 +120,14 @@ export function AIPanel({
     const promptText = inputValue.trim();
     const codeContext = getCurrentCode();
 
+    // Capture thumbnail of user's current code if including code
+    const userThumbnail = codeContext ? await captureThumbnail(codeContext) : null;
+
     // Determine parent ID - for follow-up messages, use the last assistant's ID
     const parentId = chatState.getLastAssistantId();
 
-    // Add user message
-    const userMsgId = chatState.addUserMessage(promptText, codeContext, parentId);
+    // Add user message with thumbnail
+    const userMsgId = chatState.addUserMessage(promptText, codeContext, parentId, userThumbnail ?? undefined);
 
     setInputValue('');
     setIsLoading(true);
@@ -156,8 +166,11 @@ export function AIPanel({
     const codeContext = getCurrentCode();
     const parentId = originalMessage.parentId;
 
-    // Add a new user message as a sibling (same parent)
-    const newUserMsgId = chatState.addUserMessage(newContent, codeContext, parentId);
+    // Capture thumbnail of user's current code if including code
+    const userThumbnail = codeContext ? await captureThumbnail(codeContext) : null;
+
+    // Add a new user message as a sibling (same parent) with thumbnail
+    const newUserMsgId = chatState.addUserMessage(newContent, codeContext, parentId, userThumbnail ?? undefined);
 
     setIsLoading(true);
     await callAPI(newContent, newUserMsgId, codeContext);
@@ -169,7 +182,7 @@ export function AIPanel({
       m => m.parentId === parentId && m.from === 'user'
     );
     chatState.setActiveBranch(parentKey, siblings.length - 1);
-  }, [isLoading, chatState, callAPI, getCurrentCode]);
+  }, [isLoading, chatState, callAPI, getCurrentCode, captureThumbnail]);
 
   const panelContent = (
     <div className="flex flex-col h-full">

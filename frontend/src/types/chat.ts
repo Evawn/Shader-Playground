@@ -12,6 +12,7 @@ export interface CodeArtifact {
   type: 'user-context' | 'generated';
   code: string;
   label: string;  // e.g., "Code sent" or "Generated shader"
+  thumbnail?: string;  // Data URL of first frame (PNG)
 }
 
 /**
