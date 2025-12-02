@@ -187,7 +187,15 @@ export function AIPanel({
   }, [isLoading, chatState, callAPI]);
 
   const panelContent = (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative overflow-hidden">
+      {/* Subtle radial gradient glow - centered at top */}
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full aspect-square pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle, hsla(38, 92%, 50%, 1.0) 0%, transparent 70%)',
+          filter: 'blur(100vh)',
+        }}
+      />
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-1 gap-2">
         <span className="text-md font-light text-foreground">AI </span>

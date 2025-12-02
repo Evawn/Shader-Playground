@@ -70,7 +70,7 @@ function UserMessage({
     <div className="flex flex-col gap-2">
       {/* Message content with floating action bar */}
       <div className="relative group/user-msg">
-        <div className="rounded-md bg-background-editor text-foreground text-xs overflow-hidden">
+        <div className="rounded-md bg-background-editor/20 text-foreground text-xs overflow-hidden">
           {/* Text content */}
           <div className="p-3 flex gap-2">
             <CircleUser className="h-4 w-4 flex-shrink-0 text-muted-foreground mt-0.5" />
@@ -100,7 +100,7 @@ function UserMessage({
           {message.codeArtifact && !isEditing && (
             <div
               className={cn(
-                "flex items-center bg-background-header justify-end gap-2 border-t cursor-pointer transition-colors",
+                "flex items-center bg-background-header/50 justify-end gap-2 border-t cursor-pointer transition-colors",
                 "hover:bg-background-highlighted",
                 isActive
                   ? "border-accent bg-accent/10"
