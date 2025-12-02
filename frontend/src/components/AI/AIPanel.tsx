@@ -239,6 +239,7 @@ export function AIPanel({
           onApplyCode={handleApplyCode}
           getBranchInfo={chatState.getBranchInfo}
           onBranchChange={chatState.setActiveBranch}
+          currentCode={getCurrentCode()}
         />
       )}
 

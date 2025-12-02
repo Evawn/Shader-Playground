@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { RefreshCw, Pencil, Check, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { RefreshCw, Pencil, Check, Loader2, ChevronLeft, ChevronRight, Code2, CircleUser, CornerDownRight } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
@@ -9,19 +9,8 @@ import {
   Conversation,
   ConversationContent,
 } from '../ui/shadcn-io/ai/conversation';
-import {
-  Message,
-  MessageContent,
-} from '../ui/shadcn-io/ai/message';
-import { Response } from '../ui/shadcn-io/ai/response';
 import { Actions, Action } from '../ui/shadcn-io/ai/actions';
-import {
-  Task,
-  TaskTrigger,
-  TaskContent,
-  TaskItem,
-} from '../ui/shadcn-io/ai/task';
-import { CodeArtifact } from './CodeArtifact';
+import { CodeArtifact } from './CodeArtifact'; // Used by AssistantMessage
 import type { ChatMessageNode, TaskState, BranchInfo } from '../../types/chat';
 
 interface ChatProps {
@@ -33,6 +22,7 @@ interface ChatProps {
   onApplyCode: (code: string) => void;
   getBranchInfo: (userMessageId: string) => BranchInfo;
   onBranchChange: (parentKey: string, index: number) => void;
+  currentCode?: string;
 }
 
 /**
@@ -46,6 +36,7 @@ function UserMessage({
   onBranchChange,
   onApplyCode,
   isLoading,
+  currentCode,
 }: {
   message: ChatMessageNode;
   branchInfo: BranchInfo;
@@ -54,6 +45,7 @@ function UserMessage({
   onBranchChange: (parentKey: string, index: number) => void;
   onApplyCode: (code: string) => void;
   isLoading: boolean;
+  currentCode?: string;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(message.content);
@@ -72,12 +64,16 @@ function UserMessage({
 
   const parentKey = message.parentId ?? 'root';
 
+  const isActive = currentCode === message.codeArtifact?.code;
+
   return (
-    <Message from="user">
-      <div className="flex flex-col gap-2">
-        {/* Message content with floating action bar */}
-        <div className="relative group/user-msg">
-          <div className="rounded-lg border border-none bg-background-editor p-3 text-foreground text-xs">
+    <div className="flex flex-col gap-2">
+      {/* Message content with floating action bar */}
+      <div className="relative group/user-msg">
+        <div className="rounded-md bg-background-editor text-foreground text-xs overflow-hidden">
+          {/* Text content */}
+          <div className="p-3 flex gap-2">
+            <CircleUser className="h-4 w-4 flex-shrink-0 text-muted-foreground mt-0.5" />
             {isEditing ? (
               <div className="space-y-2">
                 <Textarea
@@ -96,84 +92,114 @@ function UserMessage({
                 </div>
               </div>
             ) : (
-              <div className="whitespace-pre-wrap">{message.content}</div>
+              <div className="whitespace-pre-wrap flex-1">{message.content}</div>
             )}
           </div>
 
-          {/* Floating action bar - appears on hover (but not while loading) */}
-          {!isEditing && (
-            <div className={cn(
-              "absolute right-4 -bottom-2 translate-y-1/2 z-10 opacity-0 transition-opacity",
-              !isLoading && "group-hover/user-msg:opacity-100"
-            )}>
-              <Actions className="bg-background-header rounded-md p-1">
-                <Action
-                  tooltip="Retry"
-                  tooltipSide="bottom"
-                  onClick={() => onReroll(message.id)}
-                  disabled={isLoading}
-                >
-                  <RefreshCw className="h-3 w-3" />
-                </Action>
-                <Action
-                  tooltip="Edit"
-                  tooltipSide="bottom"
-                  onClick={() => setIsEditing(true)}
-                  disabled={isLoading}
-                >
-                  <Pencil className="h-3 w-3" />
-                </Action>
-
-                {/* Branch navigation (only shown when branches > 1) */}
-                {branchInfo.count > 1 && (
-                  <>
-                    <div className="w-px h-3 bg-border mx-1" />
-                    <Action
-                      tooltip="Previous version"
-                      tooltipSide="bottom"
-                      onClick={() => {
-                        const newIndex = branchInfo.activeIndex > 0
-                          ? branchInfo.activeIndex - 1
-                          : branchInfo.count - 1;
-                        onBranchChange(parentKey, newIndex);
-                      }}
-                      disabled={isLoading}
-                    >
-                      <ChevronLeft className="h-3 w-3" />
-                    </Action>
-                    <span className="text-xs text-muted-foreground tabular-nums px-1">
-                      {branchInfo.activeIndex + 1}/{branchInfo.count}
-                    </span>
-                    <Action
-                      tooltip="Next version"
-                      tooltipSide="bottom"
-                      onClick={() => {
-                        const newIndex = branchInfo.activeIndex < branchInfo.count - 1
-                          ? branchInfo.activeIndex + 1
-                          : 0;
-                        onBranchChange(parentKey, newIndex);
-                      }}
-                      disabled={isLoading}
-                    >
-                      <ChevronRight className="h-3 w-3" />
-                    </Action>
-                  </>
+          {/* Code artifact footer - inside bubble */}
+          {message.codeArtifact && !isEditing && (
+            <div
+              className={cn(
+                "flex items-center bg-background-header justify-end gap-2 border-t cursor-pointer transition-colors",
+                "hover:bg-background-highlighted",
+                isActive
+                  ? "border-accent bg-accent/10"
+                  : "border-lines"
+              )}
+              onClick={() => onApplyCode(message.codeArtifact!.code)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onApplyCode(message.codeArtifact!.code);
+                }
+              }}
+            >
+              <span className="text-[10px] text-muted-foreground italic pr-1">
+                submitted shader
+              </span>
+              <div className="w-16 aspect-[4/3] overflow-hidden">
+                {message.codeArtifact.thumbnail ? (
+                  <img
+                    src={message.codeArtifact.thumbnail}
+                    alt={message.codeArtifact.label}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-muted/50">
+                    <Code2 className="h-3 w-3 text-muted-foreground/60" />
+                  </div>
                 )}
-              </Actions>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Code artifact if present */}
-        {message.codeArtifact && !isEditing && (
-          <CodeArtifact
-            artifact={message.codeArtifact}
-            onApply={onApplyCode}
-            className="max-w-[80%] ml-auto"
-          />
+        {/* Floating action bar - appears on hover (but not while loading) */}
+        {!isEditing && (
+          <div className={cn(
+            "absolute right-4 -bottom-2 translate-y-1/2 z-10 opacity-0 transition-opacity",
+            !isLoading && "group-hover/user-msg:opacity-100"
+          )}>
+            <Actions className="bg-background-header rounded-md p-1">
+              <Action
+                tooltip="Retry"
+                tooltipSide="bottom"
+                onClick={() => onReroll(message.id)}
+                disabled={isLoading}
+              >
+                <RefreshCw className="h-3 w-3" />
+              </Action>
+              <Action
+                tooltip="Edit"
+                tooltipSide="bottom"
+                onClick={() => setIsEditing(true)}
+                disabled={isLoading}
+              >
+                <Pencil className="h-3 w-3" />
+              </Action>
+
+              {/* Branch navigation (only shown when branches > 1) */}
+              {branchInfo.count > 1 && (
+                <>
+                  <div className="w-px h-3 bg-border mx-1" />
+                  <Action
+                    tooltip="Previous version"
+                    tooltipSide="bottom"
+                    onClick={() => {
+                      const newIndex = branchInfo.activeIndex > 0
+                        ? branchInfo.activeIndex - 1
+                        : branchInfo.count - 1;
+                      onBranchChange(parentKey, newIndex);
+                    }}
+                    disabled={isLoading}
+                  >
+                    <ChevronLeft className="h-3 w-3" />
+                  </Action>
+                  <span className="text-xs text-muted-foreground tabular-nums px-1">
+                    {branchInfo.activeIndex + 1}/{branchInfo.count}
+                  </span>
+                  <Action
+                    tooltip="Next version"
+                    tooltipSide="bottom"
+                    onClick={() => {
+                      const newIndex = branchInfo.activeIndex < branchInfo.count - 1
+                        ? branchInfo.activeIndex + 1
+                        : 0;
+                      onBranchChange(parentKey, newIndex);
+                    }}
+                    disabled={isLoading}
+                  >
+                    <ChevronRight className="h-3 w-3" />
+                  </Action>
+                </>
+              )}
+            </Actions>
+          </div>
         )}
       </div>
-    </Message>
+    </div>
   );
 }
 
@@ -183,29 +209,35 @@ function UserMessage({
 function AssistantMessage({
   message,
   onApplyCode,
+  currentCode,
 }: {
   message: ChatMessageNode;
   onApplyCode: (code: string) => void;
+  currentCode?: string;
 }) {
   return (
-    <Message from="assistant">
-      <div className="flex flex-col gap-2">
-        <MessageContent className={message.isError ? 'bg-red-500/20 border-red-500/50' : ''}>
-          <Response className={message.isError ? 'text-red-400' : ''}>
-            {message.isError ? `Error: ${message.content}` : message.content}
-          </Response>
-        </MessageContent>
+    <div className="flex flex-col gap-2">
+      {/* Text content - full width, same style as user */}
+      <div className={cn(
+        "text-foreground text-xs whitespace-pre-wrap",
+        message.isError && "text-red-400"
+      )}>
+        {message.isError ? `Error: ${message.content}` : message.content}
+      </div>
 
-        {/* Code artifact if present */}
-        {message.codeArtifact && (
+      {/* Code artifact if present */}
+      {message.codeArtifact && (
+        <div className="flex items-start gap-2 pl-4">
+          <CornerDownRight className="h-4 w-4 flex-shrink-0 text-muted-foreground mt-1" />
           <CodeArtifact
             artifact={message.codeArtifact}
             onApply={onApplyCode}
-            className="max-w-[80%]"
+            isActive={currentCode === message.codeArtifact.code}
+            className="w-[45%]"
           />
-        )}
-      </div>
-    </Message>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -219,38 +251,32 @@ function TaskIndicator({ taskState }: { taskState: TaskState }) {
   const currentStepLabel = currentStep?.label ?? 'Processing...';
 
   return (
-    <Message from="assistant">
-      <MessageContent>
-        <Task defaultOpen={true}>
-          <TaskTrigger title={currentStepLabel}>
-            <div className="flex items-center gap-2 text-sm">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>{currentStepLabel}</span>
-            </div>
-          </TaskTrigger>
-          <TaskContent>
-            {taskState.steps.map(step => (
-              <TaskItem
-                key={step.id}
-                className={cn(
-                  'flex items-center gap-2',
-                  step.status === 'complete' && 'text-green-500',
-                  step.status === 'in_progress' && 'text-foreground',
-                  step.status === 'pending' && 'text-muted-foreground',
-                  step.status === 'error' && 'text-red-500'
-                )}
-              >
-                {step.status === 'complete' && <Check className="h-3 w-3" />}
-                {step.status === 'in_progress' && <Loader2 className="h-3 w-3 animate-spin" />}
-                {step.status === 'pending' && <div className="h-3 w-3" />}
-                {step.status === 'error' && <div className="h-3 w-3 rounded-full bg-red-500" />}
-                <span>{step.label}</span>
-              </TaskItem>
-            ))}
-          </TaskContent>
-        </Task>
-      </MessageContent>
-    </Message>
+    <div className="flex flex-col gap-1 text-xs">
+      <div className="flex items-center gap-2 text-foreground">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        <span>{currentStepLabel}</span>
+      </div>
+      <div className="flex flex-col gap-0.5 pl-5">
+        {taskState.steps.map(step => (
+          <div
+            key={step.id}
+            className={cn(
+              'flex items-center gap-2',
+              step.status === 'complete' && 'text-green-500',
+              step.status === 'in_progress' && 'text-foreground',
+              step.status === 'pending' && 'text-muted-foreground',
+              step.status === 'error' && 'text-red-500'
+            )}
+          >
+            {step.status === 'complete' && <Check className="h-3 w-3" />}
+            {step.status === 'in_progress' && <Loader2 className="h-3 w-3 animate-spin" />}
+            {step.status === 'pending' && <div className="h-3 w-3" />}
+            {step.status === 'error' && <div className="h-3 w-3 rounded-full bg-red-500" />}
+            <span>{step.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -267,6 +293,7 @@ export function Chat({
   onApplyCode,
   getBranchInfo,
   onBranchChange,
+  currentCode,
 }: ChatProps) {
   if (messages.length === 0 && taskState.status === 'idle') {
     return <div className="flex-1" />;
@@ -274,7 +301,7 @@ export function Chat({
 
   return (
     <Conversation className="flex-1 min-h-0">
-      <ConversationContent className="space-y-3">
+      <ConversationContent className="space-y-6 pb-8">
         {messages.map((message) => {
           if (message.from === 'user') {
             // For user messages, get branch info based on siblings
@@ -290,6 +317,7 @@ export function Chat({
                 onBranchChange={onBranchChange}
                 onApplyCode={onApplyCode}
                 isLoading={isLoading}
+                currentCode={currentCode}
               />
             );
           } else {
@@ -298,6 +326,7 @@ export function Chat({
                 key={message.id}
                 message={message}
                 onApplyCode={onApplyCode}
+                currentCode={currentCode}
               />
             );
           }
