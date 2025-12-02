@@ -139,17 +139,17 @@ export function AIPanel({
 
   /**
    * Handle regenerating a response for a user message
+   * Deletes existing response and subtree, then generates fresh
    */
   const handleReroll = useCallback(async (userMessageId: string) => {
     if (isLoading) return;
 
-    const rerollInfo = chatState.prepareReroll(userMessageId);
-    if (!rerollInfo) return;
+    // Delete existing responses and get info for new API call
+    const retryInfo = chatState.prepareRetry(userMessageId);
+    if (!retryInfo) return;
 
     setIsLoading(true);
-    await callAPI(rerollInfo.content, userMessageId, rerollInfo.codeContext);
-    // Switch to the new branch after reroll
-    chatState.activateNewBranch(userMessageId);
+    await callAPI(retryInfo.content, userMessageId, retryInfo.codeContext);
     setIsLoading(false);
   }, [isLoading, chatState, callAPI]);
 
@@ -163,26 +163,28 @@ export function AIPanel({
     const originalMessage = chatState.messages.find(m => m.id === userMessageId);
     if (!originalMessage) return;
 
-    const codeContext = getCurrentCode();
+    // Use the original code context from the message being edited, not the current editor code
+    const codeContext = originalMessage.codeArtifact?.code;
+    const thumbnail = originalMessage.codeArtifact?.thumbnail;
     const parentId = originalMessage.parentId;
+    const parentKey = parentId ?? 'root';
 
-    // Capture thumbnail of user's current code if including code
-    const userThumbnail = codeContext ? await captureThumbnail(codeContext) : null;
+    // Calculate the new branch index BEFORE adding the message
+    const currentSiblings = chatState.messages.filter(
+      m => m.parentId === parentId && m.from === 'user'
+    );
+    const newBranchIndex = currentSiblings.length;
 
-    // Add a new user message as a sibling (same parent) with thumbnail
-    const newUserMsgId = chatState.addUserMessage(newContent, codeContext, parentId, userThumbnail ?? undefined);
+    // Add a new user message as a sibling (same parent) with the original code context
+    const newUserMsgId = chatState.addUserMessage(newContent, codeContext, parentId, thumbnail);
+
+    // Switch to the new branch IMMEDIATELY so thinking appears under the new message
+    chatState.setActiveBranch(parentKey, newBranchIndex);
 
     setIsLoading(true);
     await callAPI(newContent, newUserMsgId, codeContext);
     setIsLoading(false);
-
-    // Switch to show the new branch
-    const parentKey = parentId ?? 'root';
-    const siblings = chatState.messages.filter(
-      m => m.parentId === parentId && m.from === 'user'
-    );
-    chatState.setActiveBranch(parentKey, siblings.length - 1);
-  }, [isLoading, chatState, callAPI, getCurrentCode, captureThumbnail]);
+  }, [isLoading, chatState, callAPI]);
 
   const panelContent = (
     <div className="flex flex-col h-full">
@@ -237,7 +239,6 @@ export function AIPanel({
           onApplyCode={handleApplyCode}
           getBranchInfo={chatState.getBranchInfo}
           onBranchChange={chatState.setActiveBranch}
-          getAssistantResponses={chatState.getAssistantResponses}
         />
       )}
 

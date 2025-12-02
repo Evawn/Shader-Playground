@@ -69,6 +69,7 @@ export function useChatState() {
   /**
    * Compute the flattened display messages based on active branches
    * This traverses the tree and picks the active branch at each level
+   * Note: Each user message has at most one assistant response (no assistant branching)
    */
   const displayMessages = useMemo((): ChatMessageNode[] => {
     const result: ChatMessageNode[] = [];
@@ -88,31 +89,25 @@ export function useChatState() {
     const traverse = (userMessage: ChatMessageNode) => {
       result.push(userMessage);
 
-      // Get assistant responses for this user message
-      const assistantResponses = messages.filter(
+      // Get the assistant response for this user message (at most one)
+      const assistantResponse = messages.find(
         m => m.parentId === userMessage.id && m.from === 'assistant'
       );
 
-      if (assistantResponses.length === 0) return;
+      if (!assistantResponse) return;
 
-      // Get active assistant response
-      const activeAssistantIndex = activeBranches.get(userMessage.id) ?? 0;
-      const activeAssistant = assistantResponses[Math.min(activeAssistantIndex, assistantResponses.length - 1)];
+      result.push(assistantResponse);
 
-      if (activeAssistant) {
-        result.push(activeAssistant);
+      // Look for follow-up user messages (children of this assistant message)
+      const followUpUsers = messages.filter(
+        m => m.parentId === assistantResponse.id && m.from === 'user'
+      );
 
-        // Look for follow-up user messages (children of this assistant message)
-        const followUpUsers = messages.filter(
-          m => m.parentId === activeAssistant.id && m.from === 'user'
-        );
-
-        if (followUpUsers.length > 0) {
-          const activeFollowUpIndex = activeBranches.get(activeAssistant.id) ?? 0;
-          const activeFollowUp = followUpUsers[Math.min(activeFollowUpIndex, followUpUsers.length - 1)];
-          if (activeFollowUp) {
-            traverse(activeFollowUp);
-          }
+      if (followUpUsers.length > 0) {
+        const activeFollowUpIndex = activeBranches.get(assistantResponse.id) ?? 0;
+        const activeFollowUp = followUpUsers[Math.min(activeFollowUpIndex, followUpUsers.length - 1)];
+        if (activeFollowUp) {
+          traverse(activeFollowUp);
         }
       }
     };
@@ -212,37 +207,47 @@ export function useChatState() {
   }, []);
 
   /**
-   * Prepare for rerolling a user message (regenerating the response)
-   * Returns the user message info needed to make a new API call
+   * Delete a message and all its descendants from the conversation tree
    */
-  const prepareReroll = useCallback((userMessageId: string): {
+  const deleteDescendants = useCallback((parentId: string) => {
+    setMessages(prev => {
+      // Collect all IDs to delete (all descendants of parentId)
+      const idsToDelete = new Set<string>();
+
+      const collectDescendants = (id: string) => {
+        // Find all children of this message
+        prev.filter(m => m.parentId === id).forEach(child => {
+          idsToDelete.add(child.id);
+          collectDescendants(child.id);
+        });
+      };
+
+      collectDescendants(parentId);
+
+      // Filter out all messages that should be deleted
+      return prev.filter(m => !idsToDelete.has(m.id));
+    });
+  }, []);
+
+  /**
+   * Prepare for retrying a user message (delete existing response and regenerate)
+   * Deletes all assistant responses and their subtrees, then returns info for new API call
+   */
+  const prepareRetry = useCallback((userMessageId: string): {
     content: string;
     codeContext?: string;
   } | null => {
     const userMessage = messages.find(m => m.id === userMessageId);
     if (!userMessage || userMessage.from !== 'user') return null;
 
+    // Delete all descendants of this user message (assistant responses and their follow-ups)
+    deleteDescendants(userMessageId);
+
     return {
       content: userMessage.content,
       codeContext: userMessage.codeArtifact?.code,
     };
-  }, [messages]);
-
-  /**
-   * After a reroll, switch to the new branch
-   * Uses functional update to read the CURRENT messages (avoids stale closure)
-   */
-  const activateNewBranch = useCallback((userMessageId: string) => {
-    setMessages(currentMessages => {
-      const responses = currentMessages.filter(
-        m => m.parentId === userMessageId && m.from === 'assistant'
-      );
-      if (responses.length > 0) {
-        setActiveBranch(userMessageId, responses.length - 1);
-      }
-      return currentMessages; // Return unchanged
-    });
-  }, [setActiveBranch]);
+  }, [messages, deleteDescendants]);
 
   /**
    * Start the task pipeline (thinking state)
@@ -347,8 +352,7 @@ export function useChatState() {
     // Branch operations
     getBranchInfo,
     setActiveBranch,
-    prepareReroll,
-    activateNewBranch,
+    prepareRetry,
 
     // Task operations
     startTask,

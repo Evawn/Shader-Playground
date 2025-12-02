@@ -33,7 +33,6 @@ interface ChatProps {
   onApplyCode: (code: string) => void;
   getBranchInfo: (userMessageId: string) => BranchInfo;
   onBranchChange: (parentKey: string, index: number) => void;
-  getAssistantResponses: (userMessageId: string) => ChatMessageNode[];
 }
 
 /**
@@ -183,20 +182,11 @@ function UserMessage({
  */
 function AssistantMessage({
   message,
-  branchInfo,
-  onBranchChange,
   onApplyCode,
-  isLoading,
 }: {
   message: ChatMessageNode;
-  branchInfo: BranchInfo;
-  onBranchChange: (parentKey: string, index: number) => void;
   onApplyCode: (code: string) => void;
-  isLoading: boolean;
 }) {
-  // The parent of an assistant message is the user message ID
-  const parentKey = message.parentId ?? '';
-
   return (
     <Message from="assistant">
       <div className="flex flex-col gap-2">
@@ -213,43 +203,6 @@ function AssistantMessage({
             onApply={onApplyCode}
             className="max-w-[80%]"
           />
-        )}
-
-        {/* Branch navigation for assistant responses (when multiple responses exist) */}
-        {branchInfo.count > 1 && (
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => {
-                const newIndex = branchInfo.activeIndex > 0
-                  ? branchInfo.activeIndex - 1
-                  : branchInfo.count - 1;
-                onBranchChange(parentKey, newIndex);
-              }}
-              disabled={isLoading}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-xs text-muted-foreground tabular-nums px-1">
-              {branchInfo.activeIndex + 1} of {branchInfo.count}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => {
-                const newIndex = branchInfo.activeIndex < branchInfo.count - 1
-                  ? branchInfo.activeIndex + 1
-                  : 0;
-                onBranchChange(parentKey, newIndex);
-              }}
-              disabled={isLoading}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
         )}
       </div>
     </Message>
@@ -314,7 +267,6 @@ export function Chat({
   onApplyCode,
   getBranchInfo,
   onBranchChange,
-  getAssistantResponses,
 }: ChatProps) {
   if (messages.length === 0 && taskState.status === 'idle') {
     return <div className="flex-1" />;
@@ -341,22 +293,11 @@ export function Chat({
               />
             );
           } else {
-            // For assistant messages, get branch info from parent user message
-            const branchInfo: BranchInfo = message.parentId
-              ? {
-                  count: getAssistantResponses(message.parentId).length,
-                  activeIndex: 0,
-                }
-              : { count: 1, activeIndex: 0 };
-
             return (
               <AssistantMessage
                 key={message.id}
                 message={message}
-                branchInfo={branchInfo}
-                onBranchChange={onBranchChange}
                 onApplyCode={onApplyCode}
-                isLoading={isLoading}
               />
             );
           }
