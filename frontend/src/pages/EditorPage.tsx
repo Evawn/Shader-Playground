@@ -306,7 +306,7 @@ function EditorPage() {
             </ResizablePanel>
 
             {/* Resize Handle */}
-            <ResizableHandle className="w-0.5 bg-lines" />
+            <ResizableHandle className="w-px bg-lines" />
 
             {/* Shader Editor - Right Panel */}
             <ResizablePanel defaultSize={60} minSize={30}>

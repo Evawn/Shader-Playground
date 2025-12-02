@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, type FormEvent } from 'react';
-import { X, Trash2 } from 'lucide-react';
+import { X, Trash2, Sparkles, Eye, EyeOff } from 'lucide-react';
 import {
   PromptInput,
   PromptInputTextarea,
@@ -13,8 +13,8 @@ import {
   PromptInputModelSelectItem,
   PromptInputModelSelectValue,
 } from '../ui/shadcn-io/ai/prompt-input';
-import { Switch } from '../ui/switch';
 import { Button } from '../ui/button';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../ui/tooltip';
 import { sendPrompt } from '../../api/ai';
 import { getErrorMessage } from '../../api/client';
 import { Chat } from './Chat';
@@ -174,77 +174,104 @@ export function AIPanel({
   const panelContent = (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between p-3">
-        <span className="text-sm font-medium text-foreground">AI</span>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={chatState.clearHistory}
-            disabled={chatState.messages.length === 0}
-            className="h-7 w-7 text-foreground-muted hover:text-foreground"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="h-7 w-7 text-foreground-muted hover:text-foreground"
-          >
-            <X className="h-4 w-4" strokeWidth={1.5} />
-          </Button>
-        </div>
+      <div className="flex items-center justify-between px-3 py-1 gap-2">
+        <span className="text-md font-light text-foreground">AI </span>
+        <Sparkles size={16} strokeWidth={2} />
+        <span className='w-full' ></span>
+        <TooltipProvider>
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={chatState.clearHistory}
+                  disabled={chatState.messages.length === 0}
+                  className="h-7 w-7 text-foreground-muted hover:text-foreground"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Clear chat</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className="h-7 w-7 text-foreground-muted hover:text-foreground"
+                >
+                  <X className="h-4 w-4" strokeWidth={1.5} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Close panel</TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
       </div>
       {/* Separator - not full width */}
-      <div className="mx-4 border-b border-accent-shadow" />
+      {/* <div className="mx-4 border-b border-lines" /> */}
 
-      {/* Main Content Area - Chat component */}
-      <Chat
-        messages={chatState.displayMessages}
-        taskState={chatState.taskState}
-        isLoading={isLoading}
-        onReroll={handleReroll}
-        onEdit={handleEdit}
-        onApplyCode={handleApplyCode}
-        getBranchInfo={chatState.getBranchInfo}
-        onBranchChange={chatState.setActiveBranch}
-        getAssistantResponses={chatState.getAssistantResponses}
-      />
+      {/* Main Content Area - Chat component (only shown when messages exist) */}
+      {chatState.messages.length > 0 && (
+        <Chat
+          messages={chatState.displayMessages}
+          taskState={chatState.taskState}
+          isLoading={isLoading}
+          onReroll={handleReroll}
+          onEdit={handleEdit}
+          onApplyCode={handleApplyCode}
+          getBranchInfo={chatState.getBranchInfo}
+          onBranchChange={chatState.setActiveBranch}
+          getAssistantResponses={chatState.getAssistantResponses}
+        />
+      )}
 
       {/* Footer - Prompt Input Area */}
-      <div className="border-t border-accent-shadow p-3">
-        <PromptInput onSubmit={handleSubmit} className="border-accent-shadow">
+      <div className="p-2 pt-0">
+        <PromptInput onSubmit={handleSubmit} className="bg-background-editor text-foreground border-background-editor">
           <PromptInputTextarea
             placeholder="Describe the shader you want to create..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            className="bg-background text-foreground placeholder:text-foreground-muted"
+            className="bg-transparent text-foreground text-xs placeholder:text-foreground-muted min-h-[80px]"
             disabled={isLoading}
           />
           <PromptInputToolbar>
-            {/* Include code toggle */}
-            <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
-              <Switch
-                checked={includeCode}
-                onCheckedChange={setIncludeCode}
-                className="h-4 w-7 data-[state=checked]:bg-primary"
-              />
-              <span>Include code</span>
-            </label>
+            <div className="flex items-center gap-1">
+              {/* Include code toggle */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIncludeCode(!includeCode)}
+                      className="h-7 w-7 text-foreground-muted hover:text-foreground"
+                    >
+                      {includeCode ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {includeCode ? 'Include code' : "Don't include code"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
 
-            <PromptInputModelSelect value={selectedModel} onValueChange={setSelectedModel}>
-              <PromptInputModelSelectTrigger className="h-8 w-auto text-xs">
-                <PromptInputModelSelectValue />
-              </PromptInputModelSelectTrigger>
-              <PromptInputModelSelectContent>
-                {AVAILABLE_MODELS.map((model) => (
-                  <PromptInputModelSelectItem key={model.id} value={model.id}>
-                    {model.name}
-                  </PromptInputModelSelectItem>
-                ))}
-              </PromptInputModelSelectContent>
-            </PromptInputModelSelect>
+              <PromptInputModelSelect value={selectedModel} onValueChange={setSelectedModel}>
+                <PromptInputModelSelectTrigger className="h-6 w-auto text-xs rounded-xl font-light hover:text-background bg-accent/50">
+                  <PromptInputModelSelectValue />
+                </PromptInputModelSelectTrigger>
+                <PromptInputModelSelectContent>
+                  {AVAILABLE_MODELS.map((model) => (
+                    <PromptInputModelSelectItem key={model.id} value={model.id}>
+                      {model.name}
+                    </PromptInputModelSelectItem>
+                  ))}
+                </PromptInputModelSelectContent>
+              </PromptInputModelSelect>
+            </div>
             <PromptInputSubmit disabled={!inputValue.trim() || isLoading} />
           </PromptInputToolbar>
         </PromptInput>
@@ -255,7 +282,7 @@ export function AIPanel({
   if (isMobile) {
     return (
       <div
-        className={`w-full border-none border-accent-shadow bg-background overflow-hidden transition-all duration-300 ease-in-out flex-shrink-0 ${
+        className={`w-full border-none border-none bg-background overflow-hidden transition-all duration-300 ease-in-out flex-shrink-0 ${
           isOpen ? 'h-[70vh]' : 'h-0 border-none'
         }`}
       >
@@ -266,7 +293,7 @@ export function AIPanel({
 
   return (
     <div
-      className={`h-full border-l-2 border-accent-shadow bg-background overflow-hidden transition-all duration-300 ease-in-out ${
+      className={`h-full border-l border-lines bg-background overflow-hidden transition-all duration-300 ease-in-out ${
         isOpen ? 'w-[25vw]' : 'w-0 border-none'
       }`}
     >
